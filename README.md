@@ -212,11 +212,13 @@ npm run check
 - [ ] 新酒馆版本已在可丢失测试数据中验证，或 README 明确标为未验证；
 - [ ] `manifest.json`、`package.json`、README 与变更记录中的版本及支持范围一致；
 - [ ] fork 若已改变行为、维护者或兼容范围，已修改显示名称、仓库地址和说明，避免被误认为原版；
-- [ ] 发布时遵守本仓库的发布快照流程，不将本地开发历史误推到 GitHub `main`。
+- [ ] 发布时从 GitHub 发布基线后的 `main` 正常快进推送；绝不推送本地旧历史分支。
 
-## 发布维护：GitHub 只保留一个发布提交
+## 发布维护：兼容酒馆原生更新
 
-本仓库刻意区分“本地开发历史”和“GitHub 发布快照”：本地 `main` 保留完整提交，GitHub `main` 只保留当前版本的一条无父提交快照。因此 GitHub 安装地址始终简洁，不会公开开发过程中的历史提交。
+GitHub `main` 从 `v0.3.19` 发布快照开始保留正常的线性提交历史，以兼容酒馆原生“更新扩展”：酒馆会对已安装分支执行 `git pull origin main`，因此新版本必须是旧版本的后代。
+
+在该基线之前形成的本地开发历史保存在仅本地的 `local-development-history` 分支中，不得推送到 GitHub。日常开发与发布均使用 `main`；未来提交会自然成为 GitHub 可见的发布历史。
 
 每次发布按以下顺序操作：
 
@@ -225,12 +227,12 @@ npm run check
 3. 在仓库根目录运行：
 
    ```powershell
-   .\scripts\Publish-ReleaseSnapshot.ps1
+   .\scripts\Publish-Release.ps1
    ```
 
-脚本会读取当前已提交文件树，生成新的根提交，更新本地 `release-snapshot`，再用 `--force-with-lease` 覆盖 GitHub 的 `main`。它不会切换、重写或删除本地 `main` 的开发历史；工作区有未提交文件、远端分支在拉取后发生变化或远端不存在时会停止。
+脚本只接受 `main` 的正常快进发布：它会先确认远端 `main` 是本地 `main` 的祖先，再普通推送并设置上游分支。若分支出现分叉，脚本会停止，避免破坏已安装扩展的原生更新链路。
 
-不要直接运行 `git push origin main`，否则本地开发提交会出现在 GitHub。这个脚本只应由仓库维护者用于发布默认分支。
+不要推送 `local-development-history`，也不要使用 `--force` 或重写 GitHub `main`。这个脚本只应由仓库维护者用于发布默认分支。
 
 ## 许可证
 
