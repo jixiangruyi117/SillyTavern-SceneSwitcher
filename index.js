@@ -8,28 +8,28 @@ import {
     normalizeStore,
     removeScene,
     saveScene,
-} from './modules/SceneModel.js?v=0.3.21';
-import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.21';
-import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.21';
+} from './modules/SceneModel.js?v=0.3.22';
+import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.22';
+import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.22';
 import {
     applyThemeWithOptionalPreferences,
     DEFAULT_THEME_PREFERENCE_KEYS,
     normalizeThemePreferenceKeys,
     THEME_PREFERENCE_OPTIONS,
-} from './modules/ThemePreferenceBridge.js?v=0.3.21';
-import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.21';
-import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.21';
-import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.21';
-import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.21';
-import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.21';
+} from './modules/ThemePreferenceBridge.js?v=0.3.22';
+import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.22';
+import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.22';
+import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.22';
+import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.22';
+import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.22';
 import {
     createSwitchHistoryEntry,
     markRecentCharacter,
     prependApiTestHistory,
     prependSwitchHistory,
     removeSwitchHistory,
-} from './modules/SwitchHistory.js?v=0.3.21';
-import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.21';
+} from './modules/SwitchHistory.js?v=0.3.22';
+import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.22';
 
 const EXTENSION_FOLDER = 'third-party/SillyTavern-SceneSwitcher';
 const SETTINGS_KEY = 'srlSceneSwitcher';
@@ -1229,7 +1229,11 @@ function floatingPanelMarkup() {
 }
 
 function getFloatingViewport() {
-    return { width: window.innerWidth, height: window.innerHeight };
+    const viewport = window.visualViewport;
+    return {
+        width: Math.max(0, Math.round(viewport?.width || document.documentElement.clientWidth || window.innerWidth)),
+        height: Math.max(0, Math.round(viewport?.height || document.documentElement.clientHeight || window.innerHeight)),
+    };
 }
 
 function positionFloatingMount(mount) {
@@ -1295,6 +1299,8 @@ function flushFloatingDrag(mount) {
 function installFloatingResizeListener() {
     if (floatingResizeInstalled) return;
     window.addEventListener('resize', handleFloatingResize);
+    window.visualViewport?.addEventListener('resize', handleFloatingResize);
+    window.visualViewport?.addEventListener('scroll', handleFloatingResize);
     floatingResizeInstalled = true;
 }
 
@@ -1316,12 +1322,24 @@ function updateFloatingPanelSpace(mount) {
     mount.style.setProperty('--floating-panel-max-height', `${Math.max(120, Math.floor(space))}px`);
 }
 
+function recoverFloatingPositionOutsideViewport(mount) {
+    const button = mount.querySelector('.srl-scene-switcher__floating-button');
+    if (!(button instanceof HTMLElement)) return;
+    const rect = button.getBoundingClientRect();
+    const viewport = getFloatingViewport();
+    const isVisible = rect.right > 0 && rect.bottom > 0 && rect.left < viewport.width && rect.top < viewport.height;
+    if (isVisible || !state.store?.floatingPosition) return;
+    state.store = { ...state.store, floatingPosition: null };
+    persist(runtime.context());
+    positionFloatingMount(mount);
+}
+
 function ensureFloatingMount() {
     let mount = document.getElementById(FLOATING_SWITCHER_ID);
     if (mount) return mount;
     mount = document.createElement('div');
     mount.id = FLOATING_SWITCHER_ID;
-    document.body.append(mount);
+    document.documentElement.append(mount);
     installFloatingResizeListener();
     if (!mount.dataset.eventsInstalled) {
         mount.dataset.eventsInstalled = 'true';
@@ -1526,6 +1544,8 @@ function renderFloatingSwitcher() {
         existing?.remove();
         if (floatingResizeInstalled) {
             window.removeEventListener('resize', handleFloatingResize);
+            window.visualViewport?.removeEventListener('resize', handleFloatingResize);
+            window.visualViewport?.removeEventListener('scroll', handleFloatingResize);
             floatingResizeInstalled = false;
         }
         state.floatingOpen = false;
@@ -1541,6 +1561,7 @@ function renderFloatingSwitcher() {
     mount.innerHTML = `
         <button class="srl-scene-switcher__floating-button menu_button" data-floating-action="toggle" aria-expanded="${state.floatingOpen}" aria-label="打开快速切换；可拖动移动" title="轻点打开，拖动移动" type="button">${appearance.imageUrl ? `<img class="srl-scene-switcher__floating-image" src="${escapeHtml(appearance.imageUrl)}" alt="">` : ''}<i class="srl-scene-switcher__floating-icon fa-solid fa-bolt" aria-hidden="true"></i></button>
         ${state.floatingOpen ? floatingPanelMarkup() : ''}`;
+    recoverFloatingPositionOutsideViewport(mount);
     updateFloatingPanelSpace(mount);
     updateFloatingDiagnostic();
 }
@@ -2237,6 +2258,8 @@ export function disable() {
     document.getElementById('srl-scene-switcher')?.remove();
     document.removeEventListener('keydown', handleDocumentKeydown);
     window.removeEventListener('resize', handleFloatingResize);
+    window.visualViewport?.removeEventListener('resize', handleFloatingResize);
+    window.visualViewport?.removeEventListener('scroll', handleFloatingResize);
     floatingResizeInstalled = false;
     keyboardEventsInstalled = false;
     state.floatingOpen = false;
