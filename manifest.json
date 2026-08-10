@@ -1,0 +1,14 @@
+{
+  "display_name": "场景切换器",
+  "loading_order": 9998,
+  "js": "index.js?v=0.3.19",
+  "css": "style.css?v=0.3.19",
+  "author": "SRL",
+  "version": "0.3.19",
+  "description": "用可选绑定的场景快速切换酒馆原生 API 连接配置、角色、预设与主题，并提供角色与聊天记录快速切换。",
+  "auto_update": true,
+  "hooks": {
+    "activate": "activate",
+    "disable": "disable"
+  }
+}

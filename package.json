@@ -1,0 +1,11 @@
+{
+  "name": "sillytavern-scene-switcher",
+  "version": "0.3.19",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check index.js && node --check modules/SceneModel.js && node --check modules/SceneRecovery.js && node --check modules/SwitchHistory.js && node --check modules/FloatingPosition.js && node --check modules/FloatingAppearance.js && node --check modules/ApiProfileModel.js && node --check modules/ApiProfileBridge.js && node --check modules/ThemePreferenceBridge.js && node --check modules/ThemePreferenceControls.js && node --check modules/ApiOnlyProfile.js && node --check modules/QuickPickerModel.js && node --test tests/*.test.mjs"
+  }
+}
