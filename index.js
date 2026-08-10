@@ -8,28 +8,28 @@ import {
     normalizeStore,
     removeScene,
     saveScene,
-} from './modules/SceneModel.js?v=0.3.20';
-import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.20';
-import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.20';
+} from './modules/SceneModel.js?v=0.3.21';
+import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.21';
+import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.21';
 import {
     applyThemeWithOptionalPreferences,
     DEFAULT_THEME_PREFERENCE_KEYS,
     normalizeThemePreferenceKeys,
     THEME_PREFERENCE_OPTIONS,
-} from './modules/ThemePreferenceBridge.js?v=0.3.20';
-import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.20';
-import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.20';
-import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.20';
-import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.20';
-import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.20';
+} from './modules/ThemePreferenceBridge.js?v=0.3.21';
+import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.21';
+import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.21';
+import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.21';
+import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.21';
+import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.21';
 import {
     createSwitchHistoryEntry,
     markRecentCharacter,
     prependApiTestHistory,
     prependSwitchHistory,
     removeSwitchHistory,
-} from './modules/SwitchHistory.js?v=0.3.20';
-import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.20';
+} from './modules/SwitchHistory.js?v=0.3.21';
+import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.21';
 
 const EXTENSION_FOLDER = 'third-party/SillyTavern-SceneSwitcher';
 const SETTINGS_KEY = 'srlSceneSwitcher';
@@ -1203,6 +1203,7 @@ function floatingSwitcherMarkup() {
                 <label class="srl-scene-switcher__field">色系<select data-action="floating-accent">${optionRows(FLOATING_ACCENTS, appearance.accent)}</select></label>
                 <label class="srl-scene-switcher__field">图案直链<input data-action="floating-image-url" type="url" inputmode="url" maxlength="2048" placeholder="https://example.com/icon.png" value="${escapeHtml(appearance.imageUrl)}"></label>
                 <p class="srl-scene-switcher__hint">图案仅支持 HTTPS 图片直链；加载失败时会显示默认图标。欢迎页和聊天界面都可使用；可直接拖到屏幕任意位置，位置会记住；长按模式下轻点不会展开。</p>
+                <p class="srl-scene-switcher__hint" data-floating-diagnostic>诊断：正在检查悬浮球状态。</p>
             </div>
         </details>`;
 }
@@ -1529,6 +1530,7 @@ function renderFloatingSwitcher() {
         }
         state.floatingOpen = false;
         state.floatingView = 'main';
+        updateFloatingDiagnostic();
         return;
     }
     const mount = ensureFloatingMount();
@@ -1540,6 +1542,32 @@ function renderFloatingSwitcher() {
         <button class="srl-scene-switcher__floating-button menu_button" data-floating-action="toggle" aria-expanded="${state.floatingOpen}" aria-label="打开快速切换；可拖动移动" title="轻点打开，拖动移动" type="button">${appearance.imageUrl ? `<img class="srl-scene-switcher__floating-image" src="${escapeHtml(appearance.imageUrl)}" alt="">` : ''}<i class="srl-scene-switcher__floating-icon fa-solid fa-bolt" aria-hidden="true"></i></button>
         ${state.floatingOpen ? floatingPanelMarkup() : ''}`;
     updateFloatingPanelSpace(mount);
+    updateFloatingDiagnostic();
+}
+
+function updateFloatingDiagnostic() {
+    const status = document.querySelector('[data-floating-diagnostic]');
+    if (!status) return;
+    if (!state.store?.showFloatingSwitcher) {
+        status.textContent = '诊断：悬浮球开关未开启。';
+        return;
+    }
+    if (!runtime) {
+        status.textContent = '诊断：酒馆运行环境尚未就绪，未创建悬浮球。';
+        return;
+    }
+    const mount = document.getElementById(FLOATING_SWITCHER_ID);
+    if (!mount) {
+        status.textContent = '诊断：运行环境已就绪，但悬浮球节点未挂载。';
+        return;
+    }
+    const style = getComputedStyle(mount);
+    const rect = mount.getBoundingClientRect();
+    const visible = style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
+    const position = `${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}×${Math.round(rect.height)}`;
+    status.textContent = visible
+        ? `诊断：节点已挂载，显示状态正常；位置 ${position}，视口 ${window.innerWidth}×${window.innerHeight}。`
+        : `诊断：节点已挂载但被运行时样式隐藏；display ${style.display}、visibility ${style.visibility}、opacity ${style.opacity}、位置 ${position}。`;
 }
 
 function renderPickerPortal() {
