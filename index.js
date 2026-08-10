@@ -8,28 +8,28 @@ import {
     normalizeStore,
     removeScene,
     saveScene,
-} from './modules/SceneModel.js?v=0.3.22';
-import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.22';
-import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.22';
+} from './modules/SceneModel.js?v=0.3.23';
+import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.23';
+import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.23';
 import {
     applyThemeWithOptionalPreferences,
     DEFAULT_THEME_PREFERENCE_KEYS,
     normalizeThemePreferenceKeys,
     THEME_PREFERENCE_OPTIONS,
-} from './modules/ThemePreferenceBridge.js?v=0.3.22';
-import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.22';
-import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.22';
-import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.22';
-import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.22';
-import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.22';
+} from './modules/ThemePreferenceBridge.js?v=0.3.23';
+import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.23';
+import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.23';
+import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.23';
+import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.23';
+import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.23';
 import {
     createSwitchHistoryEntry,
     markRecentCharacter,
     prependApiTestHistory,
     prependSwitchHistory,
     removeSwitchHistory,
-} from './modules/SwitchHistory.js?v=0.3.22';
-import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.22';
+} from './modules/SwitchHistory.js?v=0.3.23';
+import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.23';
 
 const EXTENSION_FOLDER = 'third-party/SillyTavern-SceneSwitcher';
 const SETTINGS_KEY = 'srlSceneSwitcher';
@@ -1229,11 +1229,7 @@ function floatingPanelMarkup() {
 }
 
 function getFloatingViewport() {
-    const viewport = window.visualViewport;
-    return {
-        width: Math.max(0, Math.round(viewport?.width || document.documentElement.clientWidth || window.innerWidth)),
-        height: Math.max(0, Math.round(viewport?.height || document.documentElement.clientHeight || window.innerHeight)),
-    };
+    return { width: window.innerWidth, height: window.innerHeight };
 }
 
 function positionFloatingMount(mount) {
@@ -1299,8 +1295,6 @@ function flushFloatingDrag(mount) {
 function installFloatingResizeListener() {
     if (floatingResizeInstalled) return;
     window.addEventListener('resize', handleFloatingResize);
-    window.visualViewport?.addEventListener('resize', handleFloatingResize);
-    window.visualViewport?.addEventListener('scroll', handleFloatingResize);
     floatingResizeInstalled = true;
 }
 
@@ -1322,24 +1316,12 @@ function updateFloatingPanelSpace(mount) {
     mount.style.setProperty('--floating-panel-max-height', `${Math.max(120, Math.floor(space))}px`);
 }
 
-function recoverFloatingPositionOutsideViewport(mount) {
-    const button = mount.querySelector('.srl-scene-switcher__floating-button');
-    if (!(button instanceof HTMLElement)) return;
-    const rect = button.getBoundingClientRect();
-    const viewport = getFloatingViewport();
-    const isVisible = rect.right > 0 && rect.bottom > 0 && rect.left < viewport.width && rect.top < viewport.height;
-    if (isVisible || !state.store?.floatingPosition) return;
-    state.store = { ...state.store, floatingPosition: null };
-    persist(runtime.context());
-    positionFloatingMount(mount);
-}
-
 function ensureFloatingMount() {
     let mount = document.getElementById(FLOATING_SWITCHER_ID);
     if (mount) return mount;
     mount = document.createElement('div');
     mount.id = FLOATING_SWITCHER_ID;
-    document.documentElement.append(mount);
+    document.body.append(mount);
     installFloatingResizeListener();
     if (!mount.dataset.eventsInstalled) {
         mount.dataset.eventsInstalled = 'true';
@@ -1544,8 +1526,6 @@ function renderFloatingSwitcher() {
         existing?.remove();
         if (floatingResizeInstalled) {
             window.removeEventListener('resize', handleFloatingResize);
-            window.visualViewport?.removeEventListener('resize', handleFloatingResize);
-            window.visualViewport?.removeEventListener('scroll', handleFloatingResize);
             floatingResizeInstalled = false;
         }
         state.floatingOpen = false;
@@ -1561,7 +1541,6 @@ function renderFloatingSwitcher() {
     mount.innerHTML = `
         <button class="srl-scene-switcher__floating-button menu_button" data-floating-action="toggle" aria-expanded="${state.floatingOpen}" aria-label="打开快速切换；可拖动移动" title="轻点打开，拖动移动" type="button">${appearance.imageUrl ? `<img class="srl-scene-switcher__floating-image" src="${escapeHtml(appearance.imageUrl)}" alt="">` : ''}<i class="srl-scene-switcher__floating-icon fa-solid fa-bolt" aria-hidden="true"></i></button>
         ${state.floatingOpen ? floatingPanelMarkup() : ''}`;
-    recoverFloatingPositionOutsideViewport(mount);
     updateFloatingPanelSpace(mount);
     updateFloatingDiagnostic();
 }
@@ -1586,9 +1565,13 @@ function updateFloatingDiagnostic() {
     const rect = mount.getBoundingClientRect();
     const visible = style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0 && rect.width > 0 && rect.height > 0;
     const position = `${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}×${Math.round(rect.height)}`;
+    const bodyStyle = getComputedStyle(document.body);
+    const bodyRect = document.body.getBoundingClientRect();
+    const visualViewport = window.visualViewport;
+    const layout = `行内 top=${mount.style.top || '自动'}、bottom=${mount.style.bottom || '自动'}；计算 top=${style.top}、bottom=${style.bottom}；body ${Math.round(bodyRect.left)},${Math.round(bodyRect.top)} ${Math.round(bodyRect.width)}×${Math.round(bodyRect.height)}，position=${bodyStyle.position}；视觉视口偏移 ${Math.round(visualViewport?.offsetLeft || 0)},${Math.round(visualViewport?.offsetTop || 0)}`;
     status.textContent = visible
-        ? `诊断：节点已挂载，显示状态正常；位置 ${position}，视口 ${window.innerWidth}×${window.innerHeight}。`
-        : `诊断：节点已挂载但被运行时样式隐藏；display ${style.display}、visibility ${style.visibility}、opacity ${style.opacity}、位置 ${position}。`;
+        ? `诊断：节点已挂载，显示状态正常；位置 ${position}，视口 ${window.innerWidth}×${window.innerHeight}。${layout}`
+        : `诊断：节点已挂载但被运行时样式隐藏；display ${style.display}、visibility ${style.visibility}、opacity ${style.opacity}、位置 ${position}。${layout}`;
 }
 
 function renderPickerPortal() {
@@ -2258,8 +2241,6 @@ export function disable() {
     document.getElementById('srl-scene-switcher')?.remove();
     document.removeEventListener('keydown', handleDocumentKeydown);
     window.removeEventListener('resize', handleFloatingResize);
-    window.visualViewport?.removeEventListener('resize', handleFloatingResize);
-    window.visualViewport?.removeEventListener('scroll', handleFloatingResize);
     floatingResizeInstalled = false;
     keyboardEventsInstalled = false;
     state.floatingOpen = false;
