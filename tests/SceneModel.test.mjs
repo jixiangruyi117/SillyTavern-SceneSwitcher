@@ -89,6 +89,7 @@ test('floating switcher position is persisted safely and stays inside a resized 
     assert.equal(normalizeFloatingPosition({ x: 'bad', y: 10 }), null);
     assert.deepEqual(clampFloatingPosition({ x: 480, y: 900 }, { width: 360, height: 640 }), { x: 308, y: 588 });
     assert.deepEqual(clampFloatingPosition({ x: -30, y: -1 }, { width: 360, height: 640 }), { x: 8, y: 8 });
+    assert.deepEqual(clampFloatingPosition({ x: 300, y: 633 }, { width: 360, height: 765 }, { width: 46, height: 46 }), { x: 300, y: 633 });
 });
 
 test('character picker searches both native and embedded tags, then favors relevant favorites', () => {

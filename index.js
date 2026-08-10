@@ -8,28 +8,28 @@ import {
     normalizeStore,
     removeScene,
     saveScene,
-} from './modules/SceneModel.js?v=0.3.23';
-import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.23';
-import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.23';
+} from './modules/SceneModel.js?v=0.3.24';
+import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.24';
+import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.24';
 import {
     applyThemeWithOptionalPreferences,
     DEFAULT_THEME_PREFERENCE_KEYS,
     normalizeThemePreferenceKeys,
     THEME_PREFERENCE_OPTIONS,
-} from './modules/ThemePreferenceBridge.js?v=0.3.23';
-import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.23';
-import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.23';
-import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.23';
-import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.23';
-import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.23';
+} from './modules/ThemePreferenceBridge.js?v=0.3.24';
+import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.24';
+import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.24';
+import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.24';
+import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.24';
+import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.24';
 import {
     createSwitchHistoryEntry,
     markRecentCharacter,
     prependApiTestHistory,
     prependSwitchHistory,
     removeSwitchHistory,
-} from './modules/SwitchHistory.js?v=0.3.23';
-import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.23';
+} from './modules/SwitchHistory.js?v=0.3.24';
+import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.24';
 
 const EXTENSION_FOLDER = 'third-party/SillyTavern-SceneSwitcher';
 const SETTINGS_KEY = 'srlSceneSwitcher';
@@ -1233,22 +1233,16 @@ function getFloatingViewport() {
 }
 
 function positionFloatingMount(mount) {
-    const position = clampFloatingPosition(state.store?.floatingPosition, getFloatingViewport());
-    if (!position) {
-        mount.style.left = '';
-        mount.style.top = '';
-        mount.style.right = '';
-        mount.style.bottom = '';
-        mount.dataset.anchorHorizontal = 'right';
-        mount.dataset.anchorVertical = 'bottom';
-        return;
-    }
+    const viewport = getFloatingViewport();
+    const position = clampFloatingPosition(state.store?.floatingPosition, viewport)
+        ?? clampFloatingPosition({ x: viewport.width - 60, y: viewport.height - 132 }, viewport, { width: 46, height: 46 });
+    if (!position) return;
     mount.style.left = `${position.x}px`;
     mount.style.top = `${position.y}px`;
     mount.style.right = 'auto';
     mount.style.bottom = 'auto';
-    mount.dataset.anchorHorizontal = position.x > window.innerWidth / 2 ? 'right' : 'left';
-    mount.dataset.anchorVertical = position.y > window.innerHeight / 2 ? 'bottom' : 'top';
+    mount.dataset.anchorHorizontal = position.x > viewport.width / 2 ? 'right' : 'left';
+    mount.dataset.anchorVertical = position.y > viewport.height / 2 ? 'bottom' : 'top';
 }
 
 function persistFloatingPosition(mount) {
