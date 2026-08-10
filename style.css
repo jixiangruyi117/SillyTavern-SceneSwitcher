@@ -344,7 +344,7 @@
 .srl-scene-switcher__pager button:disabled { opacity: .45; }
 .srl-scene-switcher__pager span { overflow: hidden; color: var(--scene-soft-ink); font-size: 12px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 
-#srl-scene-switcher-floating { --floating-start: #f45d48; --floating-end: #d4376a; position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(86px, calc(env(safe-area-inset-bottom) + 18px)); z-index: 9996; color: var(--SmartThemeBodyColor); font: inherit; }
+#srl-scene-switcher-floating { --floating-start: #f45d48; --floating-end: #d4376a; position: fixed; right: 14px; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); right: max(14px, env(safe-area-inset-right)); bottom: max(86px, calc(env(safe-area-inset-bottom, 0px) + 18px)); z-index: 10001; color: var(--SmartThemeBodyColor); font: inherit; }
 #srl-scene-switcher-floating[data-floating-accent="teal"] { --floating-start: #18a999; --floating-end: #16697a; }
 #srl-scene-switcher-floating[data-floating-accent="violet"] { --floating-start: #7b5cff; --floating-end: #b14aed; }
 #srl-scene-switcher-floating[data-floating-accent="gold"] { --floating-start: #ef9b21; --floating-end: #d75b1f; }

@@ -8,28 +8,28 @@ import {
     normalizeStore,
     removeScene,
     saveScene,
-} from './modules/SceneModel.js?v=0.3.19';
-import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.19';
-import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.19';
+} from './modules/SceneModel.js?v=0.3.20';
+import { removeApiProfile, saveApiProfile } from './modules/ApiProfileModel.js?v=0.3.20';
+import { applyApiCustomProfile } from './modules/ApiProfileBridge.js?v=0.3.20';
 import {
     applyThemeWithOptionalPreferences,
     DEFAULT_THEME_PREFERENCE_KEYS,
     normalizeThemePreferenceKeys,
     THEME_PREFERENCE_OPTIONS,
-} from './modules/ThemePreferenceBridge.js?v=0.3.19';
-import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.19';
-import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.19';
-import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.19';
-import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.19';
-import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.19';
+} from './modules/ThemePreferenceBridge.js?v=0.3.20';
+import { syncThemePreferenceControls } from './modules/ThemePreferenceControls.js?v=0.3.20';
+import { configureNativeApiProfileFields, getApiOnlyProfiles, getImportableApiProfiles } from './modules/ApiOnlyProfile.js?v=0.3.20';
+import { createCharacterSearchIndex, createTimedQueryCache, findCharactersInIndex, findPersonas, normalizeChatSearchResults, paginateCharacters } from './modules/QuickPickerModel.js?v=0.3.20';
+import { clampFloatingPosition } from './modules/FloatingPosition.js?v=0.3.20';
+import { FLOATING_ACCENTS, normalizeFloatingAppearance, normalizeFloatingImageUrl } from './modules/FloatingAppearance.js?v=0.3.20';
 import {
     createSwitchHistoryEntry,
     markRecentCharacter,
     prependApiTestHistory,
     prependSwitchHistory,
     removeSwitchHistory,
-} from './modules/SwitchHistory.js?v=0.3.19';
-import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.19';
+} from './modules/SwitchHistory.js?v=0.3.20';
+import { applySceneWithRecovery, createRecoveryScene, getRecoverableKeys } from './modules/SceneRecovery.js?v=0.3.20';
 
 const EXTENSION_FOLDER = 'third-party/SillyTavern-SceneSwitcher';
 const SETTINGS_KEY = 'srlSceneSwitcher';
@@ -1198,11 +1198,11 @@ function floatingSwitcherMarkup() {
         <details class="srl-scene-switcher__group"${panelAttributes('floating-switcher')}>
             <summary>快速悬浮球</summary>
             <div class="srl-scene-switcher__floating-setting">
-                <label class="srl-scene-switcher__preference-option"><input data-action="toggle-floating-switcher" type="checkbox"${state.store.showFloatingSwitcher ? ' checked' : ''}><span>在聊天界面显示快速切换悬浮球</span></label>
+                <label class="srl-scene-switcher__preference-option"><input data-action="toggle-floating-switcher" type="checkbox"${state.store.showFloatingSwitcher ? ' checked' : ''}><span>在欢迎页和聊天界面显示快速切换悬浮球</span></label>
                 <label class="srl-scene-switcher__field">打开方式<select data-action="floating-open-mode"><option value="tap"${state.store.floatingOpenMode === 'tap' ? ' selected' : ''}>单击展开</option><option value="longpress"${state.store.floatingOpenMode === 'longpress' ? ' selected' : ''}>长按展开</option></select></label>
                 <label class="srl-scene-switcher__field">色系<select data-action="floating-accent">${optionRows(FLOATING_ACCENTS, appearance.accent)}</select></label>
                 <label class="srl-scene-switcher__field">图案直链<input data-action="floating-image-url" type="url" inputmode="url" maxlength="2048" placeholder="https://example.com/icon.png" value="${escapeHtml(appearance.imageUrl)}"></label>
-                <p class="srl-scene-switcher__hint">图案仅支持 HTTPS 图片直链；加载失败时会显示默认图标。可直接拖到屏幕任意位置，位置会记住；长按模式下轻点不会展开。</p>
+                <p class="srl-scene-switcher__hint">图案仅支持 HTTPS 图片直链；加载失败时会显示默认图标。欢迎页和聊天界面都可使用；可直接拖到屏幕任意位置，位置会记住；长按模式下轻点不会展开。</p>
             </div>
         </details>`;
 }
@@ -2189,6 +2189,7 @@ export async function activate() {
     state.store = getStore(context);
     installKeyboardEvents();
     installEvents(context);
+    renderFloatingSwitcher();
     render();
 }
 
